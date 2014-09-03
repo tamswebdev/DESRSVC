@@ -191,6 +191,7 @@ public partial class svc : System.Web.UI.Page
         public bool issuccess = false;
         public string name = "";
         public string email = "";
+        public string phone = "0000000000";
     }
 
     public string Authenticate(string authInfo, string currentURL, string SPUrl, string callback)
@@ -242,6 +243,19 @@ public partial class svc : System.Web.UI.Page
                    // else
                         //isValid = false;
                     //return CreateJsonResponse(true, callback);
+
+
+                    var url = System.Configuration.ConfigurationManager.AppSettings["GetUserInfoURL"].ToString().Replace("[EMAILADDRESS]", loginInfo.email);
+                    var syncClient = new WebClient();
+                    var content = syncClient.DownloadString(url);
+
+                    string[] values = content.Split(",".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
+                    foreach (string str in values)
+                    {
+                        if (str.StartsWith("\"WorkPhone\":", StringComparison.CurrentCultureIgnoreCase))
+                            loginInfo.phone = str.ToLower().Replace("\"", "").Replace("workphone", "").Replace(":", "");
+                    }
+
                 }
 
             }
@@ -684,9 +698,12 @@ public partial class svc : System.Web.UI.Page
                                 }
                                 if (Convert.ToString(emailItem["Title"]).ToLower() == Convert.ToString(item["Modality"]).ToLower())
                                 {
-                                    appManagersEmails += Convert.ToString(emailItem["Email"]) + ";";
+                                    appManagersEmails += Convert.ToString(emailItem["Email"]) + ",";
                                 }
                             }
+
+                            if (appManagersEmails.EndsWith(",") || appManagersEmails.EndsWith(";"))
+                                appManagersEmails = appManagersEmails.Substring(0, appManagersEmails.Length - 1);
 
 
                             if (ModalityWorkListEmpty == "No" ||
@@ -697,14 +714,25 @@ public partial class svc : System.Web.UI.Page
                                 SystemPerformedAsExpected == "No" ||
                                 AnyIssuesDuringDemo == "Yes")
                             {
-                                StringDictionary headers = new StringDictionary();
-                                headers.Add("to", appManagersEmails);
-                                headers.Add("cc", plannerEmail);
-                                headers.Add("from", "PortalAdmin@tams.com");
-                                headers.Add("subject", "Demo Equipment Status Alert - " + item["SystemType"] + " - " + item["Title"]);
+                                
+                                //StringDictionary headers = new StringDictionary();
+                                //headers.Add("to", appManagersEmails);
+                                //headers.Add("cc", plannerEmail);
+                                //headers.Add("from", "kho@tams.com");
+                                //headers.Add("subject", "Demo Equipment Status Alert - " + item["SystemType"] + " - " + item["Title"]);
 
 
-                                SPUtility.SendEmail(web, headers, messageBody);
+                                //SPUtility.SendEmail(web, headers, messageBody);
+
+                                System.Net.Mail.MailMessage message = new System.Net.Mail.MailMessage();
+                                message.To.Add(appManagersEmails.Replace(';', ','));
+                                message.CC.Add(plannerEmail);
+                                message.Subject = "Demo Equipment Status Alert - " + item["SystemType"] + " - " + item["Title"];
+                                message.From = new System.Net.Mail.MailAddress("portaladmin@tams.com");
+                                message.Body = messageBody;
+                                message.IsBodyHtml = true;
+                                System.Net.Mail.SmtpClient smtp = new System.Net.Mail.SmtpClient(System.Configuration.ConfigurationManager.AppSettings["SMTPEmailServer"]);
+                                smtp.Send(message);
                             }
                         }
                     }
@@ -831,10 +859,12 @@ public partial class svc : System.Web.UI.Page
                                 }
                                 if (Convert.ToString(emailItem["Title"]).ToLower() == Modality.ToLower())
                                 {
-                                    appManagersEmails += Convert.ToString(emailItem["Email"]) + ";";
+                                    appManagersEmails += Convert.ToString(emailItem["Email"]) + ",";
                                 }
                             }
 
+                            if (appManagersEmails.EndsWith(",") || appManagersEmails.EndsWith(";"))
+                                appManagersEmails = appManagersEmails.Substring(0, appManagersEmails.Length - 1);
 
                             if (ModalityWorkListEmpty == "No" ||
                                 AllSoftwareLoadedAndFunctioning == "No" ||
@@ -844,14 +874,25 @@ public partial class svc : System.Web.UI.Page
                                 SystemPerformedAsExpected == "No" ||
                                 AnyIssuesDuringDemo == "Yes")
                             {
-                                StringDictionary headers = new StringDictionary();
-                                headers.Add("to", appManagersEmails);
-                                headers.Add("cc", plannerEmail);
-                                headers.Add("from", "PortalAdmin@tams.com");
-                                headers.Add("subject", "Demo Equipment Status Alert - " + SystemType + " - " + SerialNumber);
+                                //StringDictionary headers = new StringDictionary();
+                                //headers.Add("to", appManagersEmails);
+                                //headers.Add("cc", plannerEmail);
+                                //headers.Add("from", "PortalAdmin@tams.com");
+                                //headers.Add("subject", "Demo Equipment Status Alert - " + SystemType + " - " + SerialNumber);
 
 
-                                SPUtility.SendEmail(web, headers, messageBody);
+                                //SPUtility.SendEmail(web, headers, messageBody);
+
+
+                                System.Net.Mail.MailMessage message = new System.Net.Mail.MailMessage();
+                                message.To.Add(appManagersEmails.Replace(';', ','));
+                                message.CC.Add(plannerEmail);
+                                message.Subject = "Demo Equipment Status Alert - " + SystemType + " - " + SerialNumber;
+                                message.From = new System.Net.Mail.MailAddress("portaladmin@tams.com");
+                                message.Body = messageBody;
+                                message.IsBodyHtml = true;
+                                System.Net.Mail.SmtpClient smtp = new System.Net.Mail.SmtpClient(System.Configuration.ConfigurationManager.AppSettings["SMTPEmailServer"]);
+                                smtp.Send(message);
                             }
                         }
                     }
@@ -886,6 +927,7 @@ public partial class svc : System.Web.UI.Page
 
     #endregion
 
+    /*
     #region OP::GetUserInfo
 
     public string GetUserInfo(string SPUrl, string callback)
@@ -898,12 +940,14 @@ public partial class svc : System.Web.UI.Page
                 documents.Add(web.CurrentUser.Name);
                 documents.Add(web.CurrentUser.Email);
 
+                
             }
         }
         return CreateJsonResponse(documents.ToArray(), callback);
     }
 
     #endregion
+     */
    
     #region OP:DownloadFile
 

@@ -587,6 +587,14 @@ public partial class svc : System.Web.UI.Page
     {
         string id = null;
         WorkPhone = WorkPhone.Substring(0, 3) + "-" + WorkPhone.Substring(3, 3) + "-" + WorkPhone.Substring(6);
+
+        string messageBody = "";
+        string messageSubject = "";
+        string plannerEmail = "";
+        string appManagersEmails = "";
+        SPUserToken currentUserToken = null;
+        bool isSendEmail = false;
+
         SPSecurity.RunWithElevatedPrivileges(delegate()
         {
             using (SPSite site = new SPSite(SPUrl))
@@ -646,7 +654,7 @@ public partial class svc : System.Web.UI.Page
 
                             string SystemDate = item["System_x0020_Date"].ToString();
                             SystemDate = ((SystemDate != null && SystemDate != "") ? Convert.ToDateTime(SystemDate).ToShortDateString() : "");
-                            string messageBody = ""; // "<html><head><style>body{font-size:12.0pt;font-family:'Calibri','sans-serif';}p{margin-right:0in;margin-left:0in;font-size:12.0pt;font-family:'Calibri','serif';}</style></head><body ><div class=WordSection1>&nbsp;<table border=0 cellspacing=0 cellpadding=0 style='width:623;'> <tr>  <td colspan=2 valign=top>  This is a system generated email to notify you about a demo equipment’s critical status.  </td> </tr> <tr>  <td colspan=2 valign=top >  &nbsp;  </td> </tr> <tr>  <td colspan=2 valign=top >  <b><u>System information</u></b>  </td> </tr> <tr>  <td valign=top >  System type:  </td>  <td valign=top >" + item["SystemType"] + "</td> </tr> <tr>  <td valign=top >  System serial number:  </td>  <td valign=top >  " + item["Title"] + "  </td> </tr> <tr>  <td valign=top >Software version:  </td>  <td valign=top > " + item["Software_x0020_Version"] + "  </td> </tr> <tr>  <td valign=top >  Revision Level:  </td>  <td valign=top >  " + item["Revision_x0020_Level"] + "  </td> </tr> <tr>  <td valign=top >  Date:  </td>  <td  valign=top >  " + SystemDate + "  </td> </tr> <tr>  <td valign=top >  CSS:  </td>  <td valign=top >  " + css.Name + "  </td> </tr><tr>  <td valign=top >  Comments:  </td>  <td valign=top >  " + Comments + "  </td> </tr> <tr>  <td valign=top >  &nbsp;  </td>  <td valign=top >  &nbsp;  </td> </tr> <tr>  <td colspan=2 valign=top >  <b><u>System condition on arrival</u></b>  </td> </tr> <tr>  <td valign=top >  Control panel layout:  </td>  <td valign=top >  " + ControlPanelLayout + "  </td> </tr><tr>  <td valign=top >  Explain if changed:  </td>  <td valign=top >  " + LayoutChangeExplain + "  </td> </tr> <tr>  <td valign=top >  Modality work list empty:  </td>  <td valign=top >  " + ModalityWorkListEmpty + "  </td> </tr> <tr>  <td valign=top >  All software loaded and functioning:  </td>  <td valign=top >  " + AllSoftwareLoadedAndFunctioning + "  </td> </tr> <tr>  <td valign=top >  Please explain:  </td>  <td valign=top >  " + IfNoExplain + "  </td> </tr> <tr>  <td valign=top >  NPD presets on system:  </td>  <td valign=top >  " + NPDPresetsOnSystem + "  </td> </tr> <tr>  <td valign=top >  HDD free of patients studies:  </td>  <td valign=top >  " + HDDFreeOfPatientStudies + "  </td> </tr> <tr>  <td valign=top >  Demo images loaded on hard drive:  </td>  <td valign=top >  " + DemoImagesLoadedOnHardDrive + "  </td> </tr> <tr>  <td valign=top >  &nbsp;  </td>  <td valign=top >  &nbsp;  </td> </tr> <tr>  <td colspan=2 valign=top >  <b><u>Before leaving customer site</u></b>  </td> </tr> <tr>  <td valign=top >  System performed as expected:  </td>  <td valign=top >  " + SystemPerformedAsExpected + "  </td> </tr> <tr>  <td valign=top>  Were any issues discovered with system during demo</span>:  </td>  <td valign=top>    " + AnyIssuesDuringDemo + "  </td> </tr> <tr>  <td valign=top>  Was service contacted:  </td>  <td valign=top>    " + wasServiceContacted + "  </td> </tr> <tr>  <td valign=top>  Confirm modality work list removed from system:  </td>  </span>  <td valign=top>    " + ConfirmModalityWorkListRemoved + "  </td> </tr> <tr>  <td valign=top>  Confirm system HDD emptied of all patient studies:  </td>  </span>  <td valign=top >    " + ConfirmSystemHDDEmptied + "  </td> </tr> <tr>  <td valign=top >  &nbsp;  </td>  <td valign=top >    &nbsp;  </td> </tr> <tr>  <td valign=top >  <b><u>Specialist Information</u></b>  </td>  <td valign=top >    &nbsp;  </td> </tr> <tr>  <td valign=top >  " + web.CurrentUser.Name + "  </td>  <td valign=top >    &nbsp;  </td> </tr> <tr>  <td valign=top>  " + WorkPhone + "   </td>  <td valign=top >    &nbsp;  </td> </tr> <tr>  <td valign=top >  " + web.CurrentUser.Email.ToLower() + "  </td>  <td valign=top >    &nbsp;  </td> </tr> <tr>  <td valign=top >  &nbsp;  </td>  <td valign=top >    &nbsp;  </td> </tr> <tr>  <td valign=top >  &nbsp;  </td>  <td valign=top >    &nbsp;  </td> </tr></table></div></body></html>";
+                            messageBody = ""; // "<html><head><style>body{font-size:12.0pt;font-family:'Calibri','sans-serif';}p{margin-right:0in;margin-left:0in;font-size:12.0pt;font-family:'Calibri','serif';}</style></head><body ><div class=WordSection1>&nbsp;<table border=0 cellspacing=0 cellpadding=0 style='width:623;'> <tr>  <td colspan=2 valign=top>  This is a system generated email to notify you about a demo equipment’s critical status.  </td> </tr> <tr>  <td colspan=2 valign=top >  &nbsp;  </td> </tr> <tr>  <td colspan=2 valign=top >  <b><u>System information</u></b>  </td> </tr> <tr>  <td valign=top >  System type:  </td>  <td valign=top >" + item["SystemType"] + "</td> </tr> <tr>  <td valign=top >  System serial number:  </td>  <td valign=top >  " + item["Title"] + "  </td> </tr> <tr>  <td valign=top >Software version:  </td>  <td valign=top > " + item["Software_x0020_Version"] + "  </td> </tr> <tr>  <td valign=top >  Revision Level:  </td>  <td valign=top >  " + item["Revision_x0020_Level"] + "  </td> </tr> <tr>  <td valign=top >  Date:  </td>  <td  valign=top >  " + SystemDate + "  </td> </tr> <tr>  <td valign=top >  CSS:  </td>  <td valign=top >  " + css.Name + "  </td> </tr><tr>  <td valign=top >  Comments:  </td>  <td valign=top >  " + Comments + "  </td> </tr> <tr>  <td valign=top >  &nbsp;  </td>  <td valign=top >  &nbsp;  </td> </tr> <tr>  <td colspan=2 valign=top >  <b><u>System condition on arrival</u></b>  </td> </tr> <tr>  <td valign=top >  Control panel layout:  </td>  <td valign=top >  " + ControlPanelLayout + "  </td> </tr><tr>  <td valign=top >  Explain if changed:  </td>  <td valign=top >  " + LayoutChangeExplain + "  </td> </tr> <tr>  <td valign=top >  Modality work list empty:  </td>  <td valign=top >  " + ModalityWorkListEmpty + "  </td> </tr> <tr>  <td valign=top >  All software loaded and functioning:  </td>  <td valign=top >  " + AllSoftwareLoadedAndFunctioning + "  </td> </tr> <tr>  <td valign=top >  Please explain:  </td>  <td valign=top >  " + IfNoExplain + "  </td> </tr> <tr>  <td valign=top >  NPD presets on system:  </td>  <td valign=top >  " + NPDPresetsOnSystem + "  </td> </tr> <tr>  <td valign=top >  HDD free of patients studies:  </td>  <td valign=top >  " + HDDFreeOfPatientStudies + "  </td> </tr> <tr>  <td valign=top >  Demo images loaded on hard drive:  </td>  <td valign=top >  " + DemoImagesLoadedOnHardDrive + "  </td> </tr> <tr>  <td valign=top >  &nbsp;  </td>  <td valign=top >  &nbsp;  </td> </tr> <tr>  <td colspan=2 valign=top >  <b><u>Before leaving customer site</u></b>  </td> </tr> <tr>  <td valign=top >  System performed as expected:  </td>  <td valign=top >  " + SystemPerformedAsExpected + "  </td> </tr> <tr>  <td valign=top>  Were any issues discovered with system during demo</span>:  </td>  <td valign=top>    " + AnyIssuesDuringDemo + "  </td> </tr> <tr>  <td valign=top>  Was service contacted:  </td>  <td valign=top>    " + wasServiceContacted + "  </td> </tr> <tr>  <td valign=top>  Confirm modality work list removed from system:  </td>  </span>  <td valign=top>    " + ConfirmModalityWorkListRemoved + "  </td> </tr> <tr>  <td valign=top>  Confirm system HDD emptied of all patient studies:  </td>  </span>  <td valign=top >    " + ConfirmSystemHDDEmptied + "  </td> </tr> <tr>  <td valign=top >  &nbsp;  </td>  <td valign=top >    &nbsp;  </td> </tr> <tr>  <td valign=top >  <b><u>Specialist Information</u></b>  </td>  <td valign=top >    &nbsp;  </td> </tr> <tr>  <td valign=top >  " + web.CurrentUser.Name + "  </td>  <td valign=top >    &nbsp;  </td> </tr> <tr>  <td valign=top>  " + WorkPhone + "   </td>  <td valign=top >    &nbsp;  </td> </tr> <tr>  <td valign=top >  " + web.CurrentUser.Email.ToLower() + "  </td>  <td valign=top >    &nbsp;  </td> </tr> <tr>  <td valign=top >  &nbsp;  </td>  <td valign=top >    &nbsp;  </td> </tr> <tr>  <td valign=top >  &nbsp;  </td>  <td valign=top >    &nbsp;  </td> </tr></table></div></body></html>";
 
                             messageBody += "<html><head><style>body{font-size:12.0pt;font-family:'Calibri','sans-serif';}p{margin-right:0in;margin-left:0in;font-size:12.0pt;font-family:'Calibri','serif';}</style></head><body >";
                             messageBody += "<div class=WordSection1>&nbsp;<table border=0 cellspacing=0 cellpadding=0 style='width:623;'> ";
@@ -688,8 +696,8 @@ public partial class svc : System.Web.UI.Page
                             messageBody += "</table></div></body></html>";
 
                             SPList emailsList = web.Lists["DESREmailRecepients"];
-                            string plannerEmail = "";
-                            string appManagersEmails = "";
+                            plannerEmail = "";
+                            appManagersEmails = "";
                             foreach (SPListItem emailItem in emailsList.Items)
                             {
                                 if (Convert.ToString(emailItem["Title"]).ToLower() == "planner")
@@ -714,6 +722,10 @@ public partial class svc : System.Web.UI.Page
                                 SystemPerformedAsExpected == "No" ||
                                 AnyIssuesDuringDemo == "Yes")
                             {
+
+                                messageSubject = "Demo Equipment Status Alert - " + item["SystemType"] + " - " + item["Title"];
+                                currentUserToken = currentUser.UserToken;
+                                isSendEmail = true;
                                 
                                 //StringDictionary headers = new StringDictionary();
                                 //headers.Add("to", appManagersEmails);
@@ -724,21 +736,39 @@ public partial class svc : System.Web.UI.Page
 
                                 //SPUtility.SendEmail(web, headers, messageBody);
 
-                                System.Net.Mail.MailMessage message = new System.Net.Mail.MailMessage();
-                                message.To.Add(appManagersEmails.Replace(';', ','));
-                                message.CC.Add(plannerEmail);
-                                message.Subject = "Demo Equipment Status Alert - " + item["SystemType"] + " - " + item["Title"];
-                                message.From = new System.Net.Mail.MailAddress("portaladmin@tams.com");
-                                message.Body = messageBody;
-                                message.IsBodyHtml = true;
-                                System.Net.Mail.SmtpClient smtp = new System.Net.Mail.SmtpClient(System.Configuration.ConfigurationManager.AppSettings["SMTPEmailServer"]);
-                                smtp.Send(message);
+                                //System.Net.Mail.MailMessage message = new System.Net.Mail.MailMessage();
+                                //message.To.Add(appManagersEmails.Replace(';', ','));
+                                //message.CC.Add(plannerEmail);
+                                //message.Subject = "Demo Equipment Status Alert - " + item["SystemType"] + " - " + item["Title"];
+                                //message.From = new System.Net.Mail.MailAddress("portaladmin@tams.com");
+                                //message.Body = messageBody;
+                                //message.IsBodyHtml = true;
+                                //System.Net.Mail.SmtpClient smtp = new System.Net.Mail.SmtpClient(System.Configuration.ConfigurationManager.AppSettings["SMTPEmailServer"]);
+                                //smtp.Send(message);
                             }
                         }
                     }
                 }
             }
         });
+
+        if (isSendEmail)
+        {
+            using (SPSite impsite = new SPSite(SPUrl, currentUserToken))
+            {
+                using (SPWeb impweb = impsite.OpenWeb())
+                {
+                    StringDictionary headers = new StringDictionary();
+                    headers.Add("to", appManagersEmails);
+                    headers.Add("cc", plannerEmail);
+                    headers.Add("from", "portaladmin@tams.com");
+                    headers.Add("subject", messageSubject);
+
+
+                    SPUtility.SendEmail(impweb, headers, messageBody);
+                }
+            }
+        }
 
         this.AddLog(SPUrl, "ADD STATUS", null, authInfo);
 
@@ -756,6 +786,14 @@ public partial class svc : System.Web.UI.Page
     {
         string id = null;
         WorkPhone = WorkPhone.Substring(0, 3) + "-" + WorkPhone.Substring(3, 3) + "-" + WorkPhone.Substring(6);
+
+        bool isSendEmail = false;
+        SPUserToken currentUserToken = null;
+        string plannerEmail = "";
+        string appManagersEmails = "";
+        string messageSubject = "";
+        string messageBody = "";
+
         SPSecurity.RunWithElevatedPrivileges(delegate()
         {
             using (SPSite site = new SPSite(SPUrl))
@@ -807,7 +845,7 @@ public partial class svc : System.Web.UI.Page
                             SystemDate = ((SystemDate != null && SystemDate != "") ? Convert.ToDateTime(SystemDate).ToShortDateString() : "");
 
 
-                            string messageBody = "";
+                            messageBody = "";
 
                             messageBody += "<html><head><style>body{font-size:12.0pt;font-family:'Calibri','sans-serif';}p{margin-right:0in;margin-left:0in;font-size:12.0pt;font-family:'Calibri','serif';}</style></head>";
                             messageBody += "<body ><div class=WordSection1>&nbsp;<table border=0 cellspacing=0 cellpadding=0 style='width:623;'> ";
@@ -849,8 +887,8 @@ public partial class svc : System.Web.UI.Page
                             messageBody += "</table></div></body></html>";
 
                             SPList emailsList = web.Lists["DESREmailRecepients"];
-                            string plannerEmail = "";
-                            string appManagersEmails = "";
+                            plannerEmail = "";
+                            appManagersEmails = "";
                             foreach (SPListItem emailItem in emailsList.Items)
                             {
                                 if (Convert.ToString(emailItem["Title"]).ToLower() == "planner")
@@ -874,6 +912,10 @@ public partial class svc : System.Web.UI.Page
                                 SystemPerformedAsExpected == "No" ||
                                 AnyIssuesDuringDemo == "Yes")
                             {
+                                isSendEmail = true;
+                                currentUserToken = currentUser.UserToken;
+                                messageSubject = "Demo Equipment Status Alert - " + SystemType + " - " + SerialNumber;
+
                                 //StringDictionary headers = new StringDictionary();
                                 //headers.Add("to", appManagersEmails);
                                 //headers.Add("cc", plannerEmail);
@@ -884,21 +926,38 @@ public partial class svc : System.Web.UI.Page
                                 //SPUtility.SendEmail(web, headers, messageBody);
 
 
-                                System.Net.Mail.MailMessage message = new System.Net.Mail.MailMessage();
-                                message.To.Add(appManagersEmails.Replace(';', ','));
-                                message.CC.Add(plannerEmail);
-                                message.Subject = "Demo Equipment Status Alert - " + SystemType + " - " + SerialNumber;
-                                message.From = new System.Net.Mail.MailAddress("portaladmin@tams.com");
-                                message.Body = messageBody;
-                                message.IsBodyHtml = true;
-                                System.Net.Mail.SmtpClient smtp = new System.Net.Mail.SmtpClient(System.Configuration.ConfigurationManager.AppSettings["SMTPEmailServer"]);
-                                smtp.Send(message);
+                                //System.Net.Mail.MailMessage message = new System.Net.Mail.MailMessage();
+                                //message.To.Add(appManagersEmails.Replace(';', ','));
+                                //message.CC.Add(plannerEmail);
+                                //message.Subject = "Demo Equipment Status Alert - " + SystemType + " - " + SerialNumber;
+                                //message.From = new System.Net.Mail.MailAddress("portaladmin@tams.com");
+                                //message.Body = messageBody;
+                                //message.IsBodyHtml = true;
+                                //System.Net.Mail.SmtpClient smtp = new System.Net.Mail.SmtpClient(System.Configuration.ConfigurationManager.AppSettings["SMTPEmailServer"]);
+                                //smtp.Send(message);
                             }
                         }
                     }
                 }
             }
         });
+
+        if (isSendEmail)
+        {
+            using (SPSite impsite = new SPSite(SPUrl, currentUserToken))
+            {
+                using (SPWeb impweb = impsite.OpenWeb())
+                {
+                    StringDictionary headers = new StringDictionary();
+                    headers.Add("to", appManagersEmails);
+                    headers.Add("cc", plannerEmail);
+                    headers.Add("from", "portaladmin@tams.com");
+                    headers.Add("subject", messageSubject);
+
+                    SPUtility.SendEmail(impweb, headers, messageBody);
+                }
+            }
+        }
         
         
         this.AddLog(SPUrl, "ADD NEW", null, authInfo);
@@ -1289,6 +1348,53 @@ public partial class svc : System.Web.UI.Page
         }
     }
 
+    #endregion
+
+    #region Test Email
+    public string TestEmail(string emailto, string spurl)
+    {
+        bool retval = false;
+        SPUserToken curentUserToken = null;
+
+        SPSecurity.RunWithElevatedPrivileges(delegate()
+        {
+            using (SPSite site = new SPSite(spurl))
+            {
+                using (SPWeb web = site.OpenWeb())
+                {
+                    web.AllowUnsafeUpdates = true;
+                    SPUser currentUser = web.EnsureUser("tamsdomain\\kho");
+                    curentUserToken = currentUser.UserToken;
+
+                    StringDictionary headers = new StringDictionary();
+                    headers.Add("to", emailto);
+                    headers.Add("cc", "tmehta@tusspdev1.tams.com");
+                    headers.Add("from", "portaladmin@tams.com");
+                    headers.Add("subject", "Demo Equipment Status Alert 1");
+
+
+                    retval = SPUtility.SendEmail(web, headers, "Testing email message 1");
+                }
+            }
+        });
+
+        using (SPSite impsite = new SPSite(spurl, curentUserToken))
+        {
+            using (SPWeb impweb = impsite.OpenWeb())
+            {
+                StringDictionary headers = new StringDictionary();
+                headers.Add("to", emailto);
+                headers.Add("cc", "tmehta@tusspdev1.tams.com");
+                headers.Add("from", "portaladmin@tams.com");
+                headers.Add("subject", "Demo Equipment Status Alert 2");
+
+
+                retval = SPUtility.SendEmail(impweb, headers, "Testing email message 2");
+            }
+        }
+
+        return CreateJsonResponse(retval);
+    }
     #endregion
 
 }

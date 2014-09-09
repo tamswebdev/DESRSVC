@@ -227,7 +227,7 @@ public partial class svc : System.Web.UI.Page
                     });
 
 
-                    var url = System.Configuration.ConfigurationManager.AppSettings["GetUserInfoURL"].ToString().Replace("[EMAILADDRESS]", loginInfo.email);
+                    var url = System.Configuration.ConfigurationManager.AppSettings["GetUserInfoURL"].ToString().Replace("&amp;", "&").Replace("[EMAILADDRESS]", loginInfo.email);
                     var syncClient = new WebClient();
                     var content = syncClient.DownloadString(url);
 

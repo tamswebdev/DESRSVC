@@ -181,6 +181,16 @@ public partial class svc : System.Web.UI.Page
 
         return "";
     }
+	
+	public void WriteLog(string logMessage)
+	{
+		using (var logFile = System.IO.File.AppendText(@"C:\desr_log.txt"))
+		{
+			logFile.WriteLine(DateTime.Now);
+			logFile.WriteLine(logMessage);
+			logFile.WriteLine();
+		}
+	}
 
     #endregion
 
@@ -209,7 +219,6 @@ public partial class svc : System.Web.UI.Page
                 bool isValid = pc.ValidateCredentials(spUsername.Split('\\')[1], tokens[1]);
                 if (isValid)
                 {
-
                     SPSecurity.RunWithElevatedPrivileges(delegate()
                     {
                         using (SPSite site = new SPSite(SPUrl))
@@ -226,7 +235,7 @@ public partial class svc : System.Web.UI.Page
                         }
                     });
 
-
+					
                     var url = System.Configuration.ConfigurationManager.AppSettings["GetUserInfoURL"].ToString().Replace("&amp;", "&").Replace("[EMAILADDRESS]", loginInfo.email);
                     var syncClient = new WebClient();
                     var content = syncClient.DownloadString(url);
@@ -1057,11 +1066,19 @@ public partial class svc : System.Web.UI.Page
                 {
                     using (SPWeb web = site.OpenWeb())
                     {
-                        SPList mList = web.Lists["DESR"];
-                        SPFieldChoice mField = (SPFieldChoice)mList.Fields["ControlPanelLayout"];
-                        foreach (string mChoice in mField.Choices)
+                        SPList mList = web.Lists["DESRCPLLookups"];
+						SPQuery camlQuery = new SPQuery();
+                        camlQuery.Query = @"<OrderBy>
+                            <FieldRef Name='Order' />
+                        </OrderBy>";
+                        camlQuery.ViewFields = @"<FieldRef Name='Title' />";
+                        SPListItemCollection listItems = mList.GetItems(camlQuery);
+                        foreach (SPListItem item in listItems)
                         {
-                            choiceList.Add(mChoice);
+                            if (item["Title"] != null)
+                            {
+                                choiceList.Add(item["Title"].ToString());
+                            }
                         }
                     }
                 }

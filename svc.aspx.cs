@@ -204,7 +204,7 @@ public partial class svc : System.Web.UI.Page
         public string phone = "0000000000";
     }
 
-    public string Authenticate(string authInfo, string currentURL, string SPUrl, string callback)
+    public string Authenticate(string authInfo, string currentURL, string SPUrl, string deviceInfo, string callback)
     {
         LoginInfo loginInfo = new LoginInfo();
         try
@@ -235,7 +235,7 @@ public partial class svc : System.Web.UI.Page
                         }
                     });
 
-					
+
                     var url = System.Configuration.ConfigurationManager.AppSettings["GetUserInfoURL"].ToString().Replace("&amp;", "&").Replace("[EMAILADDRESS]", loginInfo.email);
                     var syncClient = new WebClient();
                     var content = syncClient.DownloadString(url);
@@ -246,11 +246,18 @@ public partial class svc : System.Web.UI.Page
                         if (str.StartsWith("\"WorkPhone\":", StringComparison.CurrentCultureIgnoreCase))
                             loginInfo.phone = str.ToLower().Replace("\"", "").Replace("workphone", "").Replace(":", "");
                     }
+
+                    this.AddLog(SPUrl, "LOGIN", null, authInfo, deviceInfo);
+                }
+                else
+                {
+                    this.AddLog(SPUrl, "LOGIN-FAILED", null, authInfo, deviceInfo);
                 }
             }
         }
         catch (Exception ex)
         {
+            this.AddLog(SPUrl, "LOGIN-EXCEPTION", null, authInfo, deviceInfo);
         }
 
         return CreateJsonResponse(loginInfo, callback);
@@ -456,7 +463,7 @@ public partial class svc : System.Web.UI.Page
 //        return CreateJsonResponse(documents.ToArray());
 //    }
 
-    public string SearchCatalogs(string SPUrl, string searchText, string modality, string documentType, string callback, string authInfo)
+    public string SearchCatalogs(string SPUrl, string searchText, string modality, string documentType, string callback, string authInfo, string deviceInfo)
     {
         List<Catalog> documents = new List<Catalog>();
         try
@@ -519,9 +526,11 @@ public partial class svc : System.Web.UI.Page
                 }
             });
 
-            this.AddLog(SPUrl, "SEARCHED", searchText, authInfo);
+            this.AddLog(SPUrl, "SEARCH", searchText, authInfo, deviceInfo);
         }
-        catch { }
+        catch {
+            this.AddLog(SPUrl, "SEARCH-EXCEPTION", searchText, authInfo, deviceInfo);
+        }
         
         
         return CreateJsonResponse(documents.ToArray(), callback);
@@ -573,7 +582,7 @@ public partial class svc : System.Web.UI.Page
         string HDDFreeOfPatientStudies, string DemoImagesLoadedOnHardDrive, string SystemPerformedAsExpected, 
         string AnyIssuesDuringDemo, string wasServiceContacted, string ConfirmModalityWorkListRemoved, 
         string ConfirmSystemHDDEmptied, string LayoutChangeExplain, string Comments, string WorkPhone, 
-        string SystemPerformedNotAsExpectedExplain, string IsFinal, string authInfo, string callback, string statusId)
+        string SystemPerformedNotAsExpectedExplain, string IsFinal, string authInfo, string callback, string statusId, string deviceInfo)
     {
         string id = null;
         try
@@ -586,6 +595,8 @@ public partial class svc : System.Web.UI.Page
             string appManagersEmails = "";
             SPUserToken currentUserToken = null;
             bool isSendEmail = false;
+            bool isNew = true;
+            bool isManual = false;
 
             SPSecurity.RunWithElevatedPrivileges(delegate()
             {
@@ -618,6 +629,8 @@ public partial class svc : System.Web.UI.Page
                                     desrItem = desrList.GetItemById(_sid);
                                 if (desrItem == null)
                                     desrItem = desrList.AddItem();
+                                else
+                                    isNew = false;
 
                                 desrItem["Serial_x0020_Number"] = item["Title"];
                                 desrItem["Software_x0020_Version"] = item["Software_x0020_Version"];
@@ -646,6 +659,8 @@ public partial class svc : System.Web.UI.Page
                                 desrItem["Editor"] = currentUser;
                                 desrItem.Update();
                                 id = desrItem["ID"] + "";
+                                isManual = (desrItem["IsManual"] != null && desrItem["IsManual"].ToString().ToLower().Equals("yes") ? true : false);
+
                                 web.AllowUnsafeUpdates = false;
                                 SPUser css = currentUser;
 
@@ -655,42 +670,47 @@ public partial class svc : System.Web.UI.Page
                                 messageBody = ""; // "<html><head><style>body{font-size:12.0pt;font-family:'Calibri','sans-serif';}p{margin-right:0in;margin-left:0in;font-size:12.0pt;font-family:'Calibri','serif';}</style></head><body ><div class=WordSection1>&nbsp;<table border=0 cellspacing=0 cellpadding=0 style='width:623;'> <tr>  <td colspan=2 valign=top>  This is a system generated email to notify you about a demo equipment’s critical status.  </td> </tr> <tr>  <td colspan=2 valign=top >  &nbsp;  </td> </tr> <tr>  <td colspan=2 valign=top >  <b><u>System information</u></b>  </td> </tr> <tr>  <td valign=top >  System type:  </td>  <td valign=top >" + item["SystemType"] + "</td> </tr> <tr>  <td valign=top >  System serial number:  </td>  <td valign=top >  " + item["Title"] + "  </td> </tr> <tr>  <td valign=top >Software version:  </td>  <td valign=top > " + item["Software_x0020_Version"] + "  </td> </tr> <tr>  <td valign=top >  Revision Level:  </td>  <td valign=top >  " + item["Revision_x0020_Level"] + "  </td> </tr> <tr>  <td valign=top >  Date:  </td>  <td  valign=top >  " + SystemDate + "  </td> </tr> <tr>  <td valign=top >  CSS:  </td>  <td valign=top >  " + css.Name + "  </td> </tr><tr>  <td valign=top >  Comments:  </td>  <td valign=top >  " + Comments + "  </td> </tr> <tr>  <td valign=top >  &nbsp;  </td>  <td valign=top >  &nbsp;  </td> </tr> <tr>  <td colspan=2 valign=top >  <b><u>System condition on arrival</u></b>  </td> </tr> <tr>  <td valign=top >  Control panel layout:  </td>  <td valign=top >  " + ControlPanelLayout + "  </td> </tr><tr>  <td valign=top >  Explain if changed:  </td>  <td valign=top >  " + LayoutChangeExplain + "  </td> </tr> <tr>  <td valign=top >  Modality work list empty:  </td>  <td valign=top >  " + ModalityWorkListEmpty + "  </td> </tr> <tr>  <td valign=top >  All software loaded and functioning:  </td>  <td valign=top >  " + AllSoftwareLoadedAndFunctioning + "  </td> </tr> <tr>  <td valign=top >  Please explain:  </td>  <td valign=top >  " + IfNoExplain + "  </td> </tr> <tr>  <td valign=top >  NPD presets on system:  </td>  <td valign=top >  " + NPDPresetsOnSystem + "  </td> </tr> <tr>  <td valign=top >  HDD free of patients studies:  </td>  <td valign=top >  " + HDDFreeOfPatientStudies + "  </td> </tr> <tr>  <td valign=top >  Demo images loaded on hard drive:  </td>  <td valign=top >  " + DemoImagesLoadedOnHardDrive + "  </td> </tr> <tr>  <td valign=top >  &nbsp;  </td>  <td valign=top >  &nbsp;  </td> </tr> <tr>  <td colspan=2 valign=top >  <b><u>Before leaving customer site</u></b>  </td> </tr> <tr>  <td valign=top >  System performed as expected:  </td>  <td valign=top >  " + SystemPerformedAsExpected + "  </td> </tr> <tr>  <td valign=top>  Were any issues discovered with system during demo</span>:  </td>  <td valign=top>    " + AnyIssuesDuringDemo + "  </td> </tr> <tr>  <td valign=top>  Was service contacted:  </td>  <td valign=top>    " + wasServiceContacted + "  </td> </tr> <tr>  <td valign=top>  Confirm modality work list removed from system:  </td>  </span>  <td valign=top>    " + ConfirmModalityWorkListRemoved + "  </td> </tr> <tr>  <td valign=top>  Confirm system HDD emptied of all patient studies:  </td>  </span>  <td valign=top >    " + ConfirmSystemHDDEmptied + "  </td> </tr> <tr>  <td valign=top >  &nbsp;  </td>  <td valign=top >    &nbsp;  </td> </tr> <tr>  <td valign=top >  <b><u>Specialist Information</u></b>  </td>  <td valign=top >    &nbsp;  </td> </tr> <tr>  <td valign=top >  " + web.CurrentUser.Name + "  </td>  <td valign=top >    &nbsp;  </td> </tr> <tr>  <td valign=top>  " + WorkPhone + "   </td>  <td valign=top >    &nbsp;  </td> </tr> <tr>  <td valign=top >  " + web.CurrentUser.Email.ToLower() + "  </td>  <td valign=top >    &nbsp;  </td> </tr> <tr>  <td valign=top >  &nbsp;  </td>  <td valign=top >    &nbsp;  </td> </tr> <tr>  <td valign=top >  &nbsp;  </td>  <td valign=top >    &nbsp;  </td> </tr></table></div></body></html>";
 
                                 messageBody += "<html><head><style>body{font-size:12.0pt;font-family:'Calibri','sans-serif';}p{margin-right:0in;margin-left:0in;font-size:12.0pt;font-family:'Calibri','serif';}</style></head><body >";
+								messageBody += "<div><img alt=\"\" src=\"http://tams-media.com/DESR/DESR%20masthead%20710x71.png\" /></div>";
                                 messageBody += "<div class=WordSection1>&nbsp;<table border=0 cellspacing=0 cellpadding=0 style='width:623;'> ";
                                 messageBody += "<tr><td colspan=2 valign=top>  This is a system generated email to notify you about a demo equipment’s critical status.  </td></tr>";
                                 messageBody += "<tr><td colspan=2 valign=top >  &nbsp;  </td></tr>";
                                 messageBody += "<tr><tdcolspan=2 valign=top >  <b><u>System information</u></b>  </td></tr>";
-                                messageBody += "<tr><tdvalign=top >  System type:  </td>  <td valign=top >" + item["SystemType"] + "</td> </tr>";
-                                messageBody += "<tr><tdvalign=top >  System serial number:  </td>  <td valign=top >  " + item["Title"] + "  </td></tr>";
-                                messageBody += "<tr><tdvalign=top >Software version:  </td>  <td valign=top > " + item["Software_x0020_Version"] + "  </td></tr>";
-                                messageBody += "<tr><tdvalign=top >  Revision Level:  </td>  <td valign=top >  " + item["Revision_x0020_Level"] + "  </td></tr>";
-                                messageBody += "<tr><tdvalign=top >  Date:  </td>  <td  valign=top >  " + SystemDate + "  </td></tr>";
-                                messageBody += "<tr><tdvalign=top >  CSS:  </td>  <td valign=top >  " + css.Name + "  </td></tr>";
-                                messageBody += "<tr><tdvalign=top >  Comments:  </td>  <td valign=top >  " + Comments + "  </td></tr>";
-                                messageBody += "<tr><tdvalign=top >  &nbsp;  </td>  <td valign=top >  &nbsp;  </td></tr>";
-                                messageBody += "<tr><tdcolspan=2 valign=top >  <b><u>System condition on arrival</u></b>  </td></tr>";
-                                messageBody += "<tr><tdvalign=top >  Control panel layout:  </td>  <td valign=top >  " + ControlPanelLayout + "  </td></tr>";
-                                messageBody += "<tr><tdvalign=top >  Explain if changed:  </td>  <td valign=top >  " + LayoutChangeExplain + "  </td></tr>";
-                                messageBody += "<tr><tdvalign=top >  Modality work list empty:  </td>  <td valign=top >  " + ModalityWorkListEmpty + "  </td></tr>";
-                                messageBody += "<tr><tdvalign=top >  All software loaded and functioning:  </td>  <td valign=top >  " + AllSoftwareLoadedAndFunctioning + "  </td></tr>";
-                                messageBody += "<tr><tdvalign=top >  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Please explain:  </td>  <td valign=top >  " + IfNoExplain + "  </td></tr>";
-                                messageBody += "<tr><tdvalign=top >  NPD presets on system:  </td>  <td valign=top >  " + NPDPresetsOnSystem + "  </td></tr>";
-                                messageBody += "<tr><tdvalign=top >  HDD free of patients studies:  </td>  <td valign=top >  " + HDDFreeOfPatientStudies + "  </td></tr>";
-                                messageBody += "<tr><tdvalign=top >  Demo images loaded on hard drive:  </td>  <td valign=top >  " + DemoImagesLoadedOnHardDrive + "  </td></tr>";
-                                messageBody += "<tr><tdvalign=top >  &nbsp;  </td>  <td valign=top >  &nbsp;  </td></tr>";
-                                messageBody += "<tr><tdcolspan=2 valign=top >  <b><u>Before leaving customer site</u></b>  </td></tr>";
-                                messageBody += "<tr><tdvalign=top >  System performed as expected:  </td>  <td valign=top >  " + SystemPerformedAsExpected + "  </td></tr>";
-                                messageBody += "<tr><tdvalign=top >  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Please explain:  </td>  <td valign=top >  " + SystemPerformedNotAsExpectedExplain + "  </td></tr>";
-                                messageBody += "<tr><tdvalign=top>  Were any issues discovered with system during demo</span>:  </td>  <td valign=top>    " + AnyIssuesDuringDemo + "  </td></tr>";
-                                messageBody += "<tr><tdvalign=top>  Was service contacted:  </td>  <td valign=top>    " + wasServiceContacted + "  </td></tr>";
-                                messageBody += "<tr><tdvalign=top>  Confirm that you have removed modality work list from system:  </td>  </span>  <td valign=top>    " + ConfirmModalityWorkListRemoved + "  </td></tr>";
-                                messageBody += "<tr><tdvalign=top>  Confirm that you have emptied system HDD emptied of all patient studies:  </td>  </span>  <td valign=top >    " + ConfirmSystemHDDEmptied + "  </td></tr>";
-                                messageBody += "<tr><tdvalign=top >  &nbsp;  </td>  <td valign=top >    &nbsp;  </td></tr>";
-                                messageBody += "<tr><tdvalign=top >  <b><u>Specialist Information</u></b>  </td>  <td valign=top >    &nbsp;  </td></tr>";
-                                messageBody += "<tr><tdvalign=top >  " + currentUser.Name + "  </td>  <td valign=top >    &nbsp;  </td></tr>";
-                                messageBody += "<tr><tdvalign=top>  " + WorkPhone + "   </td>  <td valign=top >    &nbsp;  </td></tr>";
-                                messageBody += "<tr><tdvalign=top >  " + currentUser.Email.ToLower() + "  </td>  <td valign=top >    &nbsp;  </td></tr>";
-                                messageBody += "<tr><tdvalign=top >  &nbsp;  </td>  <td valign=top >    &nbsp;  </td></tr>";
-                                messageBody += "<tr><tdvalign=top >  &nbsp;  </td>  <td valign=top >    &nbsp;  </td></tr>";
+                                messageBody += "<tr><td valign=top >  System type:  </td>  <td valign=top >" + item["SystemType"] + "</td> </tr>";
+                                messageBody += "<tr><td valign=top >  System serial number:  </td>  <td valign=top >  " + item["Title"] + "  </td></tr>";
+                                messageBody += "<tr><td valign=top >Software version:  </td>  <td valign=top > " + item["Software_x0020_Version"] + "  </td></tr>";
+                                messageBody += "<tr><td valign=top >  Revision Level:  </td>  <td valign=top >  " + item["Revision_x0020_Level"] + "  </td></tr>";
+                                messageBody += "<tr><td valign=top >  Date:  </td>  <td  valign=top >  " + SystemDate + "  </td></tr>";
+                                messageBody += "<tr><td valign=top >  CSS:  </td>  <td valign=top >  " + css.Name + "  </td></tr>";
+                                messageBody += "<tr><td valign=top >  Comments:  </td>  <td valign=top >  " + Comments + "  </td></tr>";
+                                messageBody += "<tr><td valign=top >  &nbsp;  </td>  <td valign=top >  &nbsp;  </td></tr>";
+                                messageBody += "<tr><td colspan=2 valign=top >  <b><u>System condition on arrival</u></b>  </td></tr>";
+                                messageBody += "<tr><td valign=top >  Control panel layout:  </td>  <td valign=top >  " + ControlPanelLayout + "  </td></tr>";
+                                messageBody += "<tr><td valign=top >  Explain if changed:  </td>  <td valign=top >  " + LayoutChangeExplain + "  </td></tr>";
+                                messageBody += "<tr><td valign=top >  Modality work list empty:  </td>  <td valign=top >  " + ModalityWorkListEmpty + "  </td></tr>";
+                                messageBody += "<tr><td valign=top >  All software loaded and functioning:  </td>  <td valign=top >  " + AllSoftwareLoadedAndFunctioning + "  </td></tr>";
+                                messageBody += "<tr><td valign=top >  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Please explain:  </td>  <td valign=top >  " + IfNoExplain + "  </td></tr>";
+                                messageBody += "<tr><td valign=top >  NPD presets on system:  </td>  <td valign=top >  " + NPDPresetsOnSystem + "  </td></tr>";
+                                messageBody += "<tr><td valign=top >  HDD free of patients studies:  </td>  <td valign=top >  " + HDDFreeOfPatientStudies + "  </td></tr>";
+                                messageBody += "<tr><td valign=top >  Demo images loaded on hard drive:  </td>  <td valign=top >  " + DemoImagesLoadedOnHardDrive + "  </td></tr>";
+                                messageBody += "<tr><td valign=top >  &nbsp;  </td>  <td valign=top >  &nbsp;  </td></tr>";
+                                messageBody += "<tr><td colspan=2 valign=top >  <b><u>Before leaving customer site</u></b>  </td></tr>";
+                                messageBody += "<tr><td valign=top >  System performed as expected:  </td>  <td valign=top >  " + SystemPerformedAsExpected + "  </td></tr>";
+                                messageBody += "<tr><td valign=top >  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Please explain:  </td>  <td valign=top >  " + SystemPerformedNotAsExpectedExplain + "  </td></tr>";
+                                messageBody += "<tr><td valign=top>  Were any issues discovered with system during demo</span>:  </td>  <td valign=top>    " + AnyIssuesDuringDemo + "  </td></tr>";
+                                messageBody += "<tr><td valign=top>  Was service contacted:  </td>  <td valign=top>    " + wasServiceContacted + "  </td></tr>";
+                                messageBody += "<tr><td valign=top>  Confirm that you have removed modality work list from system:  </td>  </span>  <td valign=top>    " + ConfirmModalityWorkListRemoved + "  </td></tr>";
+                                messageBody += "<tr><td valign=top>  Confirm that you have emptied system HDD emptied of all patient studies:  </td>  </span>  <td valign=top >    " + ConfirmSystemHDDEmptied + "  </td></tr>";
+                                messageBody += "<tr><td valign=top >  &nbsp;  </td>  <td valign=top >    &nbsp;  </td></tr>";
+                                messageBody += "<tr><td valign=top >  <b><u>Additional Comments</u></b>  </td>  <td valign=top >    &nbsp;  </td></tr>";
+                                messageBody += "<tr><td colspan=2 valign=top >  " + item["AdditionalComments"] + "  </td>  <td valign=top >    &nbsp;  </td></tr>";
+
+                                messageBody += "<tr><td valign=top >  &nbsp;  </td>  <td valign=top >    &nbsp;  </td></tr>";
+                                messageBody += "<tr><td valign=top >  <b><u>Specialist Information</u></b>  </td>  <td valign=top >    &nbsp;  </td></tr>";
+                                messageBody += "<tr><td valign=top >  " + currentUser.Name + "  </td>  <td valign=top >    &nbsp;  </td></tr>";
+                                messageBody += "<tr><td valign=top>  " + WorkPhone + "   </td>  <td valign=top >    &nbsp;  </td></tr>";
+                                messageBody += "<tr><td valign=top >  " + currentUser.Email.ToLower() + "  </td>  <td valign=top >    &nbsp;  </td></tr>";
+                                messageBody += "<tr><td valign=top >  &nbsp;  </td>  <td valign=top >    &nbsp;  </td></tr>";
+                                messageBody += "<tr><td valign=top >  &nbsp;  </td>  <td valign=top >    &nbsp;  </td></tr>";
                                 messageBody += "</table></div></body></html>";
 
                                 SPList emailsList = web.Lists["DESREmailRecepients"];
@@ -745,11 +765,23 @@ public partial class svc : System.Web.UI.Page
 
 
                         SPUtility.SendEmail(impweb, headers, messageBody);
+
+
+                        //Send notice to planner for manually adding
+                        if (isManual)
+                        {
+                            StringDictionary headers2 = new StringDictionary();
+                            headers2.Add("to", plannerEmail);
+                            headers2.Add("from", "portaladmin@tams.com");
+                            headers2.Add("subject", "Manually Adding - " + messageSubject);
+
+                            SPUtility.SendEmail(impweb, headers2, messageBody);
+                        }
                     }
                 }
             }
 
-            this.AddLog(SPUrl, "ADD STATUS", null, authInfo);
+            this.AddLog(SPUrl, "ADD-" + (IsFinal.ToLower().Equals("yes") ? "FINAL":"DRAFT") + "-STATUS", null, authInfo, deviceInfo);
         }
         catch { }
 
@@ -763,9 +795,10 @@ public partial class svc : System.Web.UI.Page
         string ControlPanelLayout, string ModalityWorkListEmpty, string AllSoftwareLoadedAndFunctioning, string IfNoExplain, 
         string NPDPresetsOnSystem, string HDDFreeOfPatientStudies, string DemoImagesLoadedOnHardDrive, string SystemPerformedAsExpected, 
         string AnyIssuesDuringDemo, string wasServiceContacted, string ConfirmModalityWorkListRemoved, string ConfirmSystemHDDEmptied,
-        string LayoutChangeExplain, string Comments, string WorkPhone, string SystemPerformedNotAsExpectedExplain, string authInfo, string callback, string IsFinal, string statusId)
+        string LayoutChangeExplain, string Comments, string WorkPhone, string SystemPerformedNotAsExpectedExplain, string authInfo, string callback, string IsFinal, string statusId, string deviceInfo)
     {
         string id = null;
+        bool isNew = true;
 
         try
         {
@@ -777,6 +810,7 @@ public partial class svc : System.Web.UI.Page
             string appManagersEmails = "";
             string messageSubject = "";
             string messageBody = "";
+            bool isManual = false;
 
             SPSecurity.RunWithElevatedPrivileges(delegate()
             {
@@ -801,6 +835,8 @@ public partial class svc : System.Web.UI.Page
                                     desrItem = desrList.GetItemById(_sid);
                                 if (desrItem == null)
                                     desrItem = desrList.AddItem();
+                                else
+                                    isNew = false;
 
                                 desrItem["Serial_x0020_Number"] = SerialNumber;
                                 desrItem["Software_x0020_Version"] = SoftwareVersion;
@@ -825,11 +861,17 @@ public partial class svc : System.Web.UI.Page
                                 desrItem["LayoutChangeExplain"] = LayoutChangeExplain;
                                 desrItem["Comments"] = Comments;
                                 desrItem["IsFinal"] = IsFinal;
+                                if (isNew)
+                                    desrItem["IsManual"] = "Yes";
+
                                 desrItem["Author"] = currentUser;
                                 desrItem["Editor"] = currentUser;
                                 desrItem.Update();
 
                                 id = desrItem["ID"] + "";
+                                isManual = (desrItem["IsManual"] != null && desrItem["IsManual"].ToString().ToLower().Equals("yes") ? true : false);
+
+
                                 web.AllowUnsafeUpdates = false;
 
 
@@ -842,7 +884,9 @@ public partial class svc : System.Web.UI.Page
                                 messageBody = "";
 
                                 messageBody += "<html><head><style>body{font-size:12.0pt;font-family:'Calibri','sans-serif';}p{margin-right:0in;margin-left:0in;font-size:12.0pt;font-family:'Calibri','serif';}</style></head>";
-                                messageBody += "<body ><div class=WordSection1>&nbsp;<table border=0 cellspacing=0 cellpadding=0 style='width:623;'> ";
+                                messageBody += "<body >";
+								messageBody += "<div><img alt=\"\" src=\"http://tams-media.com/DESR/DESR%20masthead%20710x71.png\" /></div>";
+								messageBody += "<div class=WordSection1>&nbsp;<table border=0 cellspacing=0 cellpadding=0 style='width:623;'> ";
                                 messageBody += "<tr><td colspan=2 valign=top>  This is a system generated email to notify you about a demo equipment’s critical status.  </td></tr>";
                                 messageBody += "<tr><td colspan=2 valign=top >  &nbsp;  </td></tr>";
                                 messageBody += "<tr><td colspan=2 valign=top >  <b><u>System information</u></b>  </td></tr>";
@@ -871,6 +915,10 @@ public partial class svc : System.Web.UI.Page
                                 messageBody += "<tr><td valign=top>  Was service contacted:  </td>  <td valign=top>    " + wasServiceContacted + "  </td></tr>";
                                 messageBody += "<tr><td valign=top>  Confirm that you have removed modality work list from system::  </td>  </span>  <td valign=top>    " + ConfirmModalityWorkListRemoved + "  </td></tr>";
                                 messageBody += "<tr><td valign=top>  Confirm that you have emptied system HDD emptied of all patient studies:  </td>  </span>  <td valign=top >    " + ConfirmSystemHDDEmptied + "  </td></tr>";
+                                messageBody += "<tr><td valign=top >  &nbsp;  </td>  <td valign=top >    &nbsp;  </td></tr>";
+                                messageBody += "<tr><td valign=top >  <b><u>Additional Comments</u></b>  </td>  <td valign=top >    &nbsp;  </td></tr>";
+                                messageBody += "<tr><td colspan=2 valign=top >  " + desrItem["AdditionalComments"] + "  </td>  <td valign=top >    &nbsp;  </td></tr>";
+
                                 messageBody += "<tr><td valign=top >  &nbsp;  </td>  <td valign=top >    &nbsp;  </td></tr>";
                                 messageBody += "<tr><td valign=top >  <b><u>Specialist Information</u></b>  </td>  <td valign=top >    &nbsp;  </td></tr>";
                                 messageBody += "<tr><td valign=top >  " + currentUser.Name + "  </td>  <td valign=top >    &nbsp;  </td></tr>";
@@ -929,11 +977,22 @@ public partial class svc : System.Web.UI.Page
                         headers.Add("subject", messageSubject);
 
                         SPUtility.SendEmail(impweb, headers, messageBody);
+
+                        //Send notice to planner for manually adding
+                        if (isManual)
+                        {
+                            StringDictionary headers2 = new StringDictionary();
+                            headers2.Add("to", plannerEmail);
+                            headers2.Add("from", "portaladmin@tams.com");
+                            headers2.Add("subject", "Manually Adding - " + messageSubject);
+
+                            SPUtility.SendEmail(impweb, headers2, messageBody);
+                        }
                     }
                 }
             }
 
-            this.AddLog(SPUrl, "ADD NEW", null, authInfo);
+            this.AddLog(SPUrl, (isNew ? "ADD-NEW-": "UPDATE-") + (IsFinal.ToLower().Equals("yes") ? "FINAL" : "DRAFT") + "-STATUS", null, authInfo, deviceInfo);
         }
         catch { }
 
@@ -1091,18 +1150,27 @@ public partial class svc : System.Web.UI.Page
 
     #region OP:LogOut
 
-    public void LogOut(string SPUrl, string authInfo)
+    public void LogOut(string SPUrl, string authInfo, string deviceInfo)
     {
-        this.AddLog(SPUrl, "LOGOUT", null, authInfo);
+        this.AddLog(SPUrl, "LOGOUT", null, authInfo, deviceInfo);
+    }
+
+    #endregion
+
+    #region OP:LogHomePage
+
+    public void LogHomePage(string SPUrl, string authInfo, string deviceInfo)
+    {
+        this.AddLog(SPUrl, "PAGE-HOME", null, authInfo, deviceInfo);
     }
 
     #endregion
 
     #region OP:AccessedHelp
 
-    public void AccessedHelp(string SPUrl, string authInfo)
+    public void AccessedHelp(string SPUrl, string authInfo, string deviceInfo)
     {
-        this.AddLog(SPUrl, "ACCESSED HELP", null, authInfo);
+        this.AddLog(SPUrl, "ACCESS-HELP", null, authInfo, deviceInfo);
     }
 
     #endregion
@@ -1143,7 +1211,7 @@ public partial class svc : System.Web.UI.Page
         public string IsFinal;
     }
 
-    public string GetHistoryStatuses(string SPUrl, string callback, string authInfo)
+    public string GetHistoryStatuses(string SPUrl, string callback, string authInfo, string deviceInfo)
     {
         List<StatusHistory> historyItems = new List<StatusHistory>();
         try
@@ -1214,6 +1282,7 @@ public partial class svc : System.Web.UI.Page
         }
         catch { }
 
+        this.AddLog(SPUrl, "VIEW-HISTORIES", null, authInfo, deviceInfo);
         return CreateJsonResponse(historyItems.ToArray(), callback);
     }
 
@@ -1300,11 +1369,18 @@ public partial class svc : System.Web.UI.Page
 
     #region OP:AddAdditionalComments
 
-    public string AddAdditionalComments(string SPUrl, int itemid, string comment, string callback, string authInfo)
+    public string AddAdditionalComments(string SPUrl, int itemid, string comment, string WorkPhone, string callback, string authInfo, string deviceInfo)
     {
         List<int> actionResultes = new List<int>();
         try
         {
+            SPUserToken currentUserToken = null;
+            string currentUserName = "";
+            string plannerEmail = "";
+            string messageBody = "";
+            
+
+
             SPSecurity.RunWithElevatedPrivileges(delegate()
             {
                 using (SPSite site = new SPSite(SPUrl))
@@ -1331,6 +1407,78 @@ public partial class svc : System.Web.UI.Page
                                     web.AllowUnsafeUpdates = false;
 
                                     actionResultes.Add(itemid);
+
+                                    if (item["IsFinal"] != null && item["IsFinal"].ToString().Equals("Yes"))
+                                    {
+                                        messageBody = "";
+
+                                        string SystemDate = item["System_x0020_Date"].ToString();
+                                        SystemDate = ((SystemDate != null && SystemDate != "") ? Convert.ToDateTime(SystemDate).ToShortDateString() : "");
+
+                                        if (WorkPhone.Length > 6)
+                                            WorkPhone = WorkPhone.Substring(0, 3) + "-" + WorkPhone.Substring(3, 3) + "-" + WorkPhone.Substring(6);
+
+                                        string CSS = (item["MCSS"] != null ? item["MCSS"].ToString().Substring(item["MCSS"].ToString().IndexOf("#") + 1) : "");
+
+                                        messageBody += "<html><head><style>body{font-size:12.0pt;font-family:'Calibri','sans-serif';}p{margin-right:0in;margin-left:0in;font-size:12.0pt;font-family:'Calibri','serif';}</style></head>";
+                                        messageBody += "<body >";
+                                        messageBody += "<div><img alt=\"\" src=\"http://tams-media.com/DESR/DESR%20masthead%20710x71.png\" /></div>";
+                                        messageBody += "<div class=WordSection1>&nbsp;<table border=0 cellspacing=0 cellpadding=0 style='width:623;'> ";
+                                        messageBody += "<tr><td colspan=2 valign=top>  This is a system generated email to notify you about a demo equipment’s critical status.  </td></tr>";
+                                        messageBody += "<tr><td colspan=2 valign=top >  &nbsp;  </td></tr>";
+                                        messageBody += "<tr><td colspan=2 valign=top >  <b><u>System information</u></b>  </td></tr>";
+                                        messageBody += "<tr><td valign=top >  System type:  </td>  <td valign=top >" + item["SystemType"] + "</td></tr>";
+                                        messageBody += "<tr><td valign=top >  System serial number:  </td>  <td valign=top >  " + item["Serial_x0020_Number"] + "  </td></tr>";
+                                        messageBody += "<tr><td valign=top >Software version:  </td>  <td valign=top > " + item["Software_x0020_Version"] + "  </td></tr>";
+                                        messageBody += "<tr><td valign=top >  Revision Level:  </td>  <td valign=top >  " + item["Revision_x0020_Level"] + "  </td></tr>";
+                                        messageBody += "<tr><td valign=top >  Date:  </td>  <td  valign=top >  " + SystemDate + "  </td></tr>";
+                                        messageBody += "<tr><td valign=top >  CSS:  </td>  <td valign=top >  " + CSS + "  </td></tr>";
+                                        messageBody += "<tr><td valign=top >  Comments:  </td>  <td valign=top >  " + item["Comments"] + "  </td></tr>";
+                                        messageBody += "<tr><td valign=top >  &nbsp;  </td>  <td valign=top >  &nbsp;  </td></tr>";
+                                        messageBody += "<tr><td colspan=2 valign=top >  <b><u>System condition on arrival</u></b>  </td></tr>";
+                                        messageBody += "<tr><td valign=top >  Control panel layout:  </td>  <td valign=top >  " + item["ControlPanelLayout"] + "  </td></tr>";
+                                        messageBody += "<tr><td valign=top >  Explain if changed:  </td>  <td valign=top >  " + item["LayoutChangeExplain"] + "  </td></tr>";
+                                        messageBody += "<tr><td valign=top >  Modality work list empty:  </td>  <td valign=top >  " + item["ModalityWorkListEmpty"] + "  </td></tr>";
+                                        messageBody += "<tr><td valign=top >  All software loaded and functioning:  </td>  <td valign=top >  " + item["AllSoftwareLoadedAndFunctioning"] + "  </td></tr>";
+                                        messageBody += "<tr><td valign=top >  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Please explain:  </td>  <td valign=top >  " + item["IfNoExplain"] + "  </td></tr>";
+                                        messageBody += "<tr><td valign=top >  NPD presets on system:  </td>  <td valign=top >  " + item["NPDPresetsOnSystem"] + "  </td></tr>";
+                                        messageBody += "<tr><td valign=top >  HDD free of patients studies:  </td>  <td valign=top >  " + item["HDDFreeOfPatientStudies"] + "  </td></tr>";
+                                        messageBody += "<tr><td valign=top >  Demo images loaded on hard drive:  </td>  <td valign=top >  " + item["DemoImagesLoadedOnHardDrive"] + "  </td></tr>";
+                                        messageBody += "<tr><td valign=top >  &nbsp;  </td>  <td valign=top >  &nbsp;  </td></tr>";
+                                        messageBody += "<tr><td colspan=2 valign=top >  <b><u>Before leaving customer site</u></b>  </td></tr>";
+                                        messageBody += "<tr><td valign=top >  System performed as expected:  </td>  <td valign=top >  " + item["SystemPerformedAsExpected"] + "  </td></tr>";
+                                        messageBody += "<tr><td valign=top >  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Please explain:  </td>  <td valign=top >  " + item["SystemPerformedNotAsExpectedExplain"] + "  </td></tr>";
+                                        messageBody += "<tr><td valign=top>  Were any issues discovered with system during demo</span>:  </td>  <td valign=top>    " + item["AnyIssuesDuringDemo"] + "  </td></tr>";
+                                        messageBody += "<tr><td valign=top>  Was service contacted:  </td>  <td valign=top>    " + item["wasServiceContacted"] + "  </td></tr>";
+                                        messageBody += "<tr><td valign=top>  Confirm that you have removed modality work list from system::  </td>  </span>  <td valign=top>    " + item["ConfirmModalityWorkListRemoved"] + "  </td></tr>";
+                                        messageBody += "<tr><td valign=top>  Confirm that you have emptied system HDD emptied of all patient studies:  </td>  </span>  <td valign=top >    " + item["ConfirmSystemHDDEmptied"] + "  </td></tr>";
+                                        messageBody += "<tr><td valign=top >  &nbsp;  </td>  <td valign=top >    &nbsp;  </td></tr>";
+                                        messageBody += "<tr><td valign=top >  <b><u>Additional Comments</u></b>  </td>  <td valign=top >    &nbsp;  </td></tr>";
+                                        messageBody += "<tr><td colspan=2 valign=top >  " + item["AdditionalComments"] + "  </td>  <td valign=top >    &nbsp;  </td></tr>";
+
+                                        messageBody += "<tr><td valign=top >  &nbsp;  </td>  <td valign=top >    &nbsp;  </td></tr>";
+                                        messageBody += "<tr><td valign=top >  <b><u>Specialist Information</u></b>  </td>  <td valign=top >    &nbsp;  </td></tr>";
+                                        messageBody += "<tr><td valign=top >  " + currentUser.Name + "  </td>  <td valign=top >    &nbsp;  </td></tr>";
+                                        messageBody += "<tr><td valign=top>  " + WorkPhone + "   </td>  <td valign=top >    &nbsp;  </td></tr>";
+                                        messageBody += "<tr><td valign=top >  " + currentUser.Email.ToLower() + "  </td>  <td valign=top >    &nbsp;  </td></tr>";
+                                        messageBody += "<tr><td valign=top >  &nbsp;  </td>  <td valign=top >    &nbsp;  </td></tr>";
+                                        messageBody += "<tr><td valign=top >  &nbsp;  </td>  <td valign=top >    &nbsp;  </td></tr>";
+                                        messageBody += "</table></div></body></html>";
+
+                                        SPList emailsList = web.Lists["DESREmailRecepients"];
+                                        plannerEmail = "";
+                                        foreach (SPListItem emailItem in emailsList.Items)
+                                        {
+                                            if (Convert.ToString(emailItem["Title"]).ToLower() == "planner")
+                                            {
+                                                plannerEmail = Convert.ToString(emailItem["Email"]);
+                                            }
+                                        }
+
+                                        currentUserToken = currentUser.UserToken;
+                                        currentUserName = currentUser.Name;
+
+                                    } //end of preparing email block
                                 }
                             }
                         }
@@ -1338,7 +1486,24 @@ public partial class svc : System.Web.UI.Page
                 }
             });
 
-            this.AddLog(SPUrl, "ADD STATUS ADDITIONAL COMMENT", null, authInfo);
+            if (!string.IsNullOrEmpty(plannerEmail))
+            {
+                using (SPSite impsite = new SPSite(SPUrl, currentUserToken))
+                {
+                    using (SPWeb impweb = impsite.OpenWeb())
+                    {
+                        StringDictionary headers2 = new StringDictionary();
+                        headers2.Add("to", plannerEmail);
+                        headers2.Add("from", "portaladmin@tams.com");
+                        headers2.Add("subject", currentUserName + " Has Added an Additional Comment");
+
+                        SPUtility.SendEmail(impweb, headers2, messageBody);
+                    }
+                }
+            }
+
+
+            this.AddLog(SPUrl, "ADD-ADDITIONAL-COMMENT", null, authInfo, deviceInfo);
         }
         catch { }
         
@@ -1350,6 +1515,11 @@ public partial class svc : System.Web.UI.Page
     #region OP:AddLog
 
     public void AddLog(string SPUrl, string action, string searchText, string authInfo)
+    {
+        AddLog(SPUrl, action, searchText, authInfo, "");
+    }
+
+    public void AddLog(string SPUrl, string action, string searchText, string authInfo, string deviceInfo)
     {
         string currentUser = "";
         SPSecurity.RunWithElevatedPrivileges(delegate()
@@ -1404,6 +1574,17 @@ public partial class svc : System.Web.UI.Page
                         userSearchText.Value = searchText;
                     }
                     sqlComm.Parameters.Add(userSearchText);
+
+                    SqlParameter userDeviceInfo = sqlComm.CreateParameter();
+                    userDeviceInfo.ParameterName = "@deviceInfo";
+                    userDeviceInfo.DbType = DbType.String;
+                    userDeviceInfo.Value = DBNull.Value;
+                    if (deviceInfo != null)
+                    {
+                        userDeviceInfo.Value = deviceInfo;
+                    }
+
+                    sqlComm.Parameters.Add(userDeviceInfo);
 
                     try
                     {

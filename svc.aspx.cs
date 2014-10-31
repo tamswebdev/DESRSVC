@@ -207,49 +207,49 @@ public partial class svc : System.Web.UI.Page
         string SystemDate = desrItem["System_x0020_Date"].ToString();
         SystemDate = ((SystemDate != null && SystemDate != "") ? Convert.ToDateTime(SystemDate).ToShortDateString() : "");
 
-        messageBody += "<html><head><style>body{font-size:12.0pt;font-family:'Calibri','sans-serif';}p{margin-right:0in;margin-left:0in;font-size:12.0pt;font-family:'Calibri','serif';}.app-manager{background-color: yellow;}.app-planner{color:red;}.app-both{background-color:yellow;color:red;}</style></head>";
-        messageBody += "<body >";
-        messageBody += "<div><img alt=\"\" src=\"http://tams-media.com/DESR/DESR%20masthead%20710x71.png\" /></div>";
-        messageBody += "<div class=WordSection1>&nbsp;<table border=0 cellspacing=0 cellpadding=0 style='width:623;'> ";
-        messageBody += "<tr><td colspan=2 valign=top>  This is a system generated email to notify you about a demo equipment’s critical status.  </td></tr>";
-        messageBody += "<tr><td colspan=2 valign=top >  &nbsp;  </td></tr>";
-        messageBody += "<tr><td colspan=2 valign=top >  <b><u>System information</u></b>  </td></tr>";
-        messageBody += "<tr><td valign=top >  System type:  </td>  <td valign=top >" + desrItem["SystemType"] + "</td></tr>";
-        messageBody += "<tr><td valign=top >  System serial number:  </td>  <td valign=top >  " + desrItem["Software_x0020_Version"] + "  </td></tr>";
-        messageBody += "<tr><td valign=top >Software version:  </td>  <td valign=top > " + desrItem["Software_x0020_Version"] + "  </td></tr>";
-        messageBody += "<tr><td valign=top >  Revision Level:  </td>  <td valign=top >  " + desrItem["Revision_x0020_Level"] + "  </td></tr>";
-        messageBody += "<tr><td valign=top >  Date:  </td>  <td  valign=top >  " + SystemDate + "  </td></tr>";
-        messageBody += "<tr><td valign=top >  CSS:  </td>  <td valign=top >  " + currentUser.Name + "  </td></tr>";
-        messageBody += "<tr><td valign=top >  Comments:  </td>  <td valign=top >  " + desrItem["Comments"] + "  </td></tr>";
-        messageBody += "<tr><td valign=top >  &nbsp;  </td>  <td valign=top >  &nbsp;  </td></tr>";
-        messageBody += "<tr><td colspan=2 valign=top >  <b><u>System condition on arrival</u></b>  </td></tr>";
-        messageBody += "<tr><td valign=top >  Control panel layout:  </td>  <td valign=top >  " + EmailHighlight(desrItem["ControlPanelLayout"], "ControlPanelLayout") + "  </td></tr>";
-        messageBody += "<tr><td valign=top >  Explain if changed:  </td>  <td valign=top >  " + desrItem["LayoutChangeExplain"] + "  </td></tr>";
-        messageBody += "<tr><td valign=top >  Modality work list empty:  </td>  <td valign=top >  " + EmailHighlight(desrItem["ModalityWorkListEmpty"], "ModalityWorkListEmpty") + "  </td></tr>";
-        messageBody += "<tr><td valign=top >  All software loaded and functioning:  </td>  <td valign=top >  " + EmailHighlight(desrItem["AllSoftwareLoadedAndFunctioning"], "AllSoftwareLoadedAndFunctioning") + "  </td></tr>";
-        messageBody += "<tr><td valign=top >  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Please explain:  </td>  <td valign=top >  " + desrItem["IfNoExplain"] + "  </td></tr>";
-        messageBody += "<tr><td valign=top >  NPD presets on system:  </td>  <td valign=top >  " + EmailHighlight(desrItem["NPDPresetsOnSystem"], "NPDPresetsOnSystem") + "  </td></tr>";
-        messageBody += "<tr><td valign=top >  HDD free of patients studies:  </td>  <td valign=top >  " + EmailHighlight(desrItem["HDDFreeOfPatientStudies"], "HDDFreeOfPatientStudies") + "  </td></tr>";
-        messageBody += "<tr><td valign=top >  Demo images loaded on hard drive:  </td>  <td valign=top >  " + EmailHighlight(desrItem["DemoImagesLoadedOnHardDrive"], "DemoImagesLoadedOnHardDrive") + "  </td></tr>";
-        messageBody += "<tr><td valign=top >  &nbsp;  </td>  <td valign=top >  &nbsp;  </td></tr>";
-        messageBody += "<tr><td colspan=2 valign=top >  <b><u>Before leaving customer site</u></b>  </td></tr>";
-        messageBody += "<tr><td valign=top >  System performed as expected:  </td>  <td valign=top >  " + EmailHighlight(desrItem["SystemPerformedAsExpected"], "SystemPerformedAsExpected") + "  </td></tr>";
-        messageBody += "<tr><td valign=top >  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Please explain:  </td>  <td valign=top >  " + desrItem["SystemPerformedNotAsExpectedExplain"] + "  </td></tr>";
-        messageBody += "<tr><td valign=top>  Were any issues discovered with system during demo</span>:  </td>  <td valign=top>    " + EmailHighlight(desrItem["AnyIssuesDuringDemo"], "AnyIssuesDuringDemo") + "  </td></tr>";
-        messageBody += "<tr><td valign=top>  Was service contacted:  </td>  <td valign=top>    " + EmailHighlight(desrItem["wasServiceContacted"], "wasServiceContacted") + "  </td></tr>";
-        messageBody += "<tr><td valign=top>  Confirm that you have removed modality work list from system::  </td>  </span>  <td valign=top>    " + EmailHighlight(desrItem["ConfirmModalityWorkListRemoved"], "ConfirmModalityWorkListRemoved") + "  </td></tr>";
-        messageBody += "<tr><td valign=top>  Confirm that you have emptied system HDD emptied of all patient studies:  </td>  </span>  <td valign=top >    " + EmailHighlight(desrItem["ConfirmSystemHDDEmptied"], "ConfirmSystemHDDEmptied") + "  </td></tr>";
-        messageBody += "<tr><td valign=top >  &nbsp;  </td>  <td valign=top >    &nbsp;  </td></tr>";
-        messageBody += "<tr><td valign=top >  <b><u>Additional Comments</u></b>  </td>  <td valign=top >    &nbsp;  </td></tr>";
-        messageBody += "<tr><td colspan=2 valign=top >  " + desrItem["AdditionalComments"] + "  </td>  <td valign=top >    &nbsp;  </td></tr>";
-
-        messageBody += "<tr><td valign=top >  &nbsp;  </td>  <td valign=top >    &nbsp;  </td></tr>";
-        messageBody += "<tr><td valign=top >  <b><u>Specialist Information</u></b>  </td>  <td valign=top >    &nbsp;  </td></tr>";
-        messageBody += "<tr><td valign=top >  " + currentUser.Name + "  </td>  <td valign=top >    &nbsp;  </td></tr>";
-        messageBody += "<tr><td valign=top>  " + WorkPhone + "   </td>  <td valign=top >    &nbsp;  </td></tr>";
-        messageBody += "<tr><td valign=top >  " + currentUser.Email.ToLower() + "  </td>  <td valign=top >    &nbsp;  </td></tr>";
-        messageBody += "<tr><td valign=top >  &nbsp;  </td>  <td valign=top >    &nbsp;  </td></tr>";
-        messageBody += "<tr><td valign=top >  &nbsp;  </td>  <td valign=top >    &nbsp;  </td></tr>";
+        messageBody += "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\"><html><head>" + Environment.NewLine;
+        messageBody += "<style>body{font-size:12.0pt;font-family:'Calibri','sans-serif';}p{margin-right:0in;margin-left:0in;font-size:12.0pt;font-family:'Calibri','serif';}.app-manager{background-color: yellow;}.app-planner{color:red;}.app-both{background-color:yellow;color:red;}.msgIndent{padding-left: 25px;}</style></head>" + Environment.NewLine;
+        messageBody += "<body >" + Environment.NewLine;
+        messageBody += "<div><img alt=\"\" src=\"http://tams-media.com/DESR/DESR%20masthead%20710x71.png\" /></div>" + Environment.NewLine;
+        messageBody += "<div class=WordSection1>&nbsp;<table border=0 cellspacing=0 cellpadding=0 style='width:623;'> " + Environment.NewLine;
+        messageBody += "<tr><td colspan=2 valign=top>  This is a system generated email to notify you about a demo equipment’s critical status.  </td></tr>" + Environment.NewLine;
+        messageBody += "<tr><td colspan=2 valign=top >&nbsp;</td></tr>" + Environment.NewLine;
+        messageBody += "<tr><td colspan=2 valign=top >  <b><u>System information</u></b>  </td></tr>" + Environment.NewLine;
+        messageBody += "<tr><td valign=top >  System type:  </td><td valign=top >" + desrItem["SystemType"] + "</td></tr>" + Environment.NewLine;
+        messageBody += "<tr><td valign=top >  System serial number:  </td><td valign=top >  " + desrItem["Serial_x0020_Number"] + "  </td></tr>" + Environment.NewLine;
+        messageBody += "<tr><td valign=top >Software version:  </td><td valign=top > " + desrItem["Software_x0020_Version"] + "  </td></tr>" + Environment.NewLine;
+        messageBody += "<tr><td valign=top >  Revision Level:  </td><td valign=top >  " + desrItem["Revision_x0020_Level"] + "  </td></tr>" + Environment.NewLine;
+        messageBody += "<tr><td valign=top >  Date:  </td><td  valign=top >  " + SystemDate + "  </td></tr>" + Environment.NewLine;
+        messageBody += "<tr><td valign=top >  CSS:  </td><td valign=top >  " + currentUser.Name + "  </td></tr>" + Environment.NewLine;
+        messageBody += "<tr><td valign=top >  Comments:  </td><td valign=top >  " + desrItem["Comments"] + "  </td></tr>" + Environment.NewLine;
+        messageBody += "<tr><td valign=top >&nbsp;</td><td valign=top >&nbsp;</td></tr>" + Environment.NewLine;
+        messageBody += "<tr><td colspan=2 valign=top >  <b><u>System condition on arrival</u></b>  </td></tr>" + Environment.NewLine;
+        messageBody += "<tr><td valign=top >  Control panel layout:  </td><td valign=top >  " + EmailHighlight(desrItem["ControlPanelLayout"], "ControlPanelLayout") + "  </td></tr>" + Environment.NewLine;
+        messageBody += "<tr><td valign=top class=msgIndent>  Explain if changed:  </td><td valign=top >  " + desrItem["LayoutChangeExplain"] + "  </td></tr>" + Environment.NewLine;
+        messageBody += "<tr><td valign=top >  Modality work list empty:  </td><td valign=top >  " + EmailHighlight(desrItem["ModalityWorkListEmpty"], "ModalityWorkListEmpty") + "  </td></tr>" + Environment.NewLine;
+        messageBody += "<tr><td valign=top >  All software loaded and functioning:  </td><td valign=top >  " + EmailHighlight(desrItem["AllSoftwareLoadedAndFunctioning"], "AllSoftwareLoadedAndFunctioning") + "  </td></tr>" + Environment.NewLine;
+        messageBody += "<tr><td valign=top class=msgIndent>  Please explain:  </td><td valign=top >  " + desrItem["IfNoExplain"] + "  </td></tr>" + Environment.NewLine;
+        messageBody += "<tr><td valign=top >  NPD presets on system:  </td><td valign=top >  " + EmailHighlight(desrItem["NPDPresetsOnSystem"], "NPDPresetsOnSystem") + "  </td></tr>" + Environment.NewLine;
+        messageBody += "<tr><td valign=top >  HDD free of patients studies:  </td><td valign=top >  " + EmailHighlight(desrItem["HDDFreeOfPatientStudies"], "HDDFreeOfPatientStudies") + "  </td></tr>" + Environment.NewLine;
+        messageBody += "<tr><td valign=top >  Demo images loaded on hard drive:  </td><td valign=top >  " + EmailHighlight(desrItem["DemoImagesLoadedOnHardDrive"], "DemoImagesLoadedOnHardDrive") + "  </td></tr>" + Environment.NewLine;
+        messageBody += "<tr><td valign=top >&nbsp;</td><td valign=top >&nbsp;</td></tr>" + Environment.NewLine;
+        messageBody += "<tr><td colspan=2 valign=top >  <b><u>Before leaving customer site</u></b>  </td></tr>" + Environment.NewLine;
+        messageBody += "<tr><td valign=top >  System performed as expected:  </td><td valign=top >  " + EmailHighlight(desrItem["SystemPerformedAsExpected"], "SystemPerformedAsExpected") + "  </td></tr>" + Environment.NewLine;
+        messageBody += "<tr><td valign=top  class=msgIndent>  Please explain:  </td><td valign=top >  " + desrItem["SystemPerformedNotAsExpectedExplain"] + "  </td></tr>" + Environment.NewLine;
+        messageBody += "<tr><td valign=top>  Were any issues discovered with system during demo:  </td><td valign=top>    " + EmailHighlight(desrItem["AnyIssuesDuringDemo"], "AnyIssuesDuringDemo") + "  </td></tr>" + Environment.NewLine;
+        messageBody += "<tr><td valign=top>  Was service contacted:  </td><td valign=top>    " + EmailHighlight(desrItem["wasServiceContacted"], "wasServiceContacted") + "  </td></tr>" + Environment.NewLine;
+        messageBody += "<tr><td valign=top>  Confirm that you have removed modality work list from system:  </td><td valign=top>    " + EmailHighlight(desrItem["ConfirmModalityWorkListRemoved"], "ConfirmModalityWorkListRemoved") + "  </td></tr>" + Environment.NewLine;
+        messageBody += "<tr><td valign=top>  Confirm that you have emptied system HDD emptied of all patient studies:  </td><td valign=top >    " + EmailHighlight(desrItem["ConfirmSystemHDDEmptied"], "ConfirmSystemHDDEmptied") + "  </td></tr>" + Environment.NewLine;
+        messageBody += "<tr><td valign=top >&nbsp;</td><td valign=top >&nbsp;</td></tr>" + Environment.NewLine;
+        messageBody += "<tr><td valign=top >  <b><u>Additional Comments</u></b>  </td><td valign=top >&nbsp;</td></tr>" + Environment.NewLine;
+        messageBody += "<tr><td colspan=2 valign=top >  " + desrItem["AdditionalComments"] + "  </td><td valign=top >&nbsp;</td></tr>" + Environment.NewLine;
+        messageBody += "<tr><td valign=top >&nbsp;</td><td valign=top >  &nbsp;</td></tr>" + Environment.NewLine;
+        messageBody += "<tr><td valign=top >  <b><u>Specialist Information</u></b>  </td><td valign=top >&nbsp;</td></tr>" + Environment.NewLine;
+        messageBody += "<tr><td valign=top >  " + currentUser.Name + "  </td><td valign=top >&nbsp;</td></tr>" + Environment.NewLine;
+        messageBody += "<tr><td valign=top>  " + WorkPhone + "   </td><td valign=top >&nbsp;</td></tr>" + Environment.NewLine;
+        messageBody += "<tr><td valign=top >  " + currentUser.Email.ToLower() + "  </td><td valign=top >&nbsp;</td></tr>" + Environment.NewLine;
+        messageBody += "<tr><td valign=top >&nbsp;</td><td valign=top >&nbsp;</td></tr>" + Environment.NewLine;
+        messageBody += "<tr><td valign=top >&nbsp;</td><td valign=top >&nbsp;</td></tr>" + Environment.NewLine;
         messageBody += "</table></div></body></html>";
 
         return messageBody;
@@ -258,12 +258,12 @@ public partial class svc : System.Web.UI.Page
     //EmailHighlight(, "")
     private string EmailHighlight(object spvalue, string checkingKey)
     {
-        string value = (spvalue != "" ? spvalue.ToString() : "");
+        string value = ((spvalue != null && spvalue != "") ? spvalue.ToString() : "");
 
         switch (checkingKey + "--" + value.ToLower())
         {
             case "ControlPanelLayout--control panel changed":
-                return "<span class='app-manager'>" + value + "</span>";
+                return "<span class='app-planner'>" + value + "</span>";
             case "ModalityWorkListEmpty--no":
                 return "<span class='app-manager'>" + value + "</span>";
             case "AllSoftwareLoadedAndFunctioning--no":
@@ -276,7 +276,7 @@ public partial class svc : System.Web.UI.Page
                 return "<span class='app-manager'>" + value + "</span>";
             case "SystemPerformedAsExpected--no":
                 return "<span class='app-planner'>" + value + "</span>";
-            case "AnyIssuesDuringDemo--no":
+            case "AnyIssuesDuringDemo--yes":
                 return "<span class='app-planner'>" + value + "</span>";
             case "wasServiceContacted--no":
                 return "" + value + "";
@@ -862,7 +862,7 @@ public partial class svc : System.Web.UI.Page
 
 
                         SPUtility.SendEmail(impweb, headers, messageBody);
-
+                       
 
                         //Send notice to planner for manually adding
                         if (isManual)
@@ -1517,8 +1517,11 @@ public partial class svc : System.Web.UI.Page
                                         if (WorkPhone.Length > 6)
                                             WorkPhone = WorkPhone.Substring(0, 3) + "-" + WorkPhone.Substring(3, 3) + "-" + WorkPhone.Substring(6);
 
-                                        string CSS = (item["MCSS"] != null ? item["MCSS"].ToString().Substring(item["MCSS"].ToString().IndexOf("#") + 1) : "");
+                                        //string CSS = (item["MCSS"] != null ? item["MCSS"].ToString().Substring(item["MCSS"].ToString().IndexOf("#") + 1) : "");
 
+                                        messageBody = GenerateEmailContent(item, currentUser, WorkPhone);
+
+                                        /*
                                         messageBody += "<html><head><style>body{font-size:12.0pt;font-family:'Calibri','sans-serif';}p{margin-right:0in;margin-left:0in;font-size:12.0pt;font-family:'Calibri','serif';}</style></head>";
                                         messageBody += "<body >";
                                         messageBody += "<div><img alt=\"\" src=\"http://tams-media.com/DESR/DESR%20masthead%20710x71.png\" /></div>";
@@ -1563,6 +1566,7 @@ public partial class svc : System.Web.UI.Page
                                         messageBody += "<tr><td valign=top >  &nbsp;  </td>  <td valign=top >    &nbsp;  </td></tr>";
                                         messageBody += "<tr><td valign=top >  &nbsp;  </td>  <td valign=top >    &nbsp;  </td></tr>";
                                         messageBody += "</table></div></body></html>";
+                                         */
 
                                         SPList emailsList = web.Lists["DESREmailRecepients"];
                                         plannerEmail = "";
